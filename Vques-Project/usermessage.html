@@ -1,0 +1,262 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - मैसेज | Message</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .container {
+      min-height: calc(100vh - 120px);
+      padding: 20px;
+      background: #f0f2f5;
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+    .header {
+      padding: 10px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .chat-window {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 60%;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .message-dp {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .message-content {
+      background: #e9ecef;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .sent {
+      margin-left: auto;
+      flex-direction: row-reverse;
+    }
+    .sent .message-content {
+      background: #0084ff;
+      color: #fff;
+    }
+    .received .message-content {
+      background: #e9ecef;
+      color: #000;
+    }
+    .input-area {
+      position: fixed;
+      bottom: 60px;
+      left: 20px;
+      right: 20px;
+      background: #fff;
+      padding: 10px;
+      border-top: 1px solid #dbdbdb;
+      display: flex;
+      gap: 10px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #dbdbdb;
+      border-radius: 4px;
+    }
+    .input-area button {
+      padding: 8px 15px;
+      background: #0095f6;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .input-area button:hover {
+      background: #007bbe;
+    }
+    .file-btn {
+      padding: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+    }
+    .file-btn input {
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .file-btn:hover {
+      background: #d1d5db;
+    }
+  </style>
+</head>
+<body class="font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/take-test.html" class="flex items-center"><i class="fas fa-pen mr-2"></i> Take Test</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES</h1>
+    <p class="text-lg">सवाल पूछो, ज्ञान बढ़ाओ | Ask, Learn, Win!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto">
+    <div class="header">
+      <h2 class="text-xl font-semibold">मैसेज | Message</h2>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window">
+      <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <img src="https://via.placeholder.com/30" alt="DP" class="message-dp">@otheruser
+      </h3>
+      <div class="message received">
+        <img src="https://via.placeholder.com/30" alt="DP" class="message-dp">
+        <div class="message-content">हाय! तुम्हारा आखिरी सवाल मजेदार था।</div>
+      </div>
+      <div class="message sent">
+        <img src="https://via.placeholder.com/30" alt="DP" class="message-dp">
+        <div class="message-content">धन्यवाद! अगला सवाल आज रात को।</div>
+      </div>
+      <div class="message received">
+        <img src="https://via.placeholder.com/30" alt="DP" class="message-dp">
+        <div class="message-content">ठीक है, इंतजार रहेगा!</div>
+      </div>
+      <div class="message sent" id="latest-message">
+        <img src="https://via.placeholder.com/30" alt="DP" class="message-dp">
+        <div class="message-content">03:06 PM, 23 Oct 2025</div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <input type="text" placeholder="संदेश टाइप करें | Type a message..." id="message-input">
+      <button onclick="sendMessage()">भेजें | Send</button>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center border-t">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value.trim();
+      if (message) {
+        const chatWindow = document.querySelector('.chat-window');
+        const newMessage = document.createElement('div');
+        newMessage.classList.add('message', 'sent');
+        newMessage.innerHTML = `<img src="https://via.placeholder.com/30" alt="DP" class="message-dp"><div class="message-content">${message}</div>`;
+        chatWindow.appendChild(newMessage);
+        input.value = '';
+        newMessage.scrollIntoView({ behavior: 'smooth' });
+
+        // Dummy response after 1 second
+        setTimeout(() => {
+          const response = document.createElement('div');
+          response.classList.add('message', 'received');
+          response.innerHTML = `<img src="https://via.placeholder.com/30" alt="DP" class="message-dp"><div class="message-content">ठीक है, जवाब मिल गया!</div>`;
+          chatWindow.appendChild(response);
+          response.scrollIntoView({ behavior: 'smooth' });
+        }, 1000);
+      }
+    }
+
+    // Enter key support
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

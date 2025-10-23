@@ -1,0 +1,203 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - सब्सक्रिप्शन | Subscription</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top: 4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question (Subscription Required)</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/subscription.html" class="flex items-center"><i class="fas fa-lock mr-2"></i> Subscription</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES - सब्सक्रिप्शन</h1>
+    <p class="text-lg">अपने अनुभव को बढ़ाएँ | Upgrade Your Experience!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">आपका सब्सक्रिप्शन | Your Subscription</h2>
+      <p class="text-gray-600 mb-4">वर्तमान में आप मुफ्त योजना का उपयोग कर रहे हैं। प्रीमियम सुविधाओं के लिए अपग्रेड करें! | You are currently on the Free Plan. Upgrade for premium features!</p>
+    </div>
+
+    <!-- Subscription Plans -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Free Plan -->
+      <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">मुफ्त योजना | Free Plan</h3>
+        <p class="text-gray-600 mb-4">सीमित प्रश्न और सुविधाएँ। | Limited questions and features.</p>
+        <ul class="text-gray-600 space-y-2 mb-4">
+          <li><i class="fas fa-check text-green-500 mr-2"></i> 10 प्रश्न प्रतिदिन | 10 questions daily</li>
+          <li><i class="fas fa-check text-green-500 mr-2"></i> बेसिक समर्थन | Basic support</li>
+          <li><i class="fas fa-times text-red-500 mr-2"></i> प्रीमियम सामग्री | Premium content</li>
+          <li><i class="fas fa-times text-red-500 mr-2"></i> सवाल अपलोड | Question Upload</li>
+          <li><i class="fas fa-times text-red-500 mr-2"></i> प्रोफ़ाइल एडिट | Profile Edit</li>
+        </ul>
+        <button class="bg-gray-300 text-gray-800 px-4 py-2 rounded cursor-not-allowed" disabled>चुना गया | Selected</button>
+      </div>
+
+      <!-- Premium Plan -->
+      <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">प्रीमियम योजना | Premium Plan</h3>
+        <p class="text-gray-600 mb-4">असीमित पहुँच और विशेष लाभ। | Unlimited access and special benefits.</p>
+        <ul class="text-gray-600 space-y-2 mb-4">
+          <li><i class="fas fa-check text-green-500 mr-2"></i> असीमित प्रश्न | Unlimited questions</li>
+          <li><i class="fas fa-check text-green-500 mr-2"></i> प्रीमियम समर्थन | Premium support</i>
+          <li><i class="fas fa-check text-green-500 mr-2"></i> विशेष सामग्री | Exclusive content</li>
+          <li><i class="fas fa-check text-green-500 mr-2"></i> सवाल अपलोड करें | Upload Questions</li>
+          <li><i class="fas fa-check text-green-500 mr-2"></i> प्रोफ़ाइल एडिट | Profile Edit</li>
+          <li><i class="fas fa-crown text-yellow-500 mr-2"></i> प्रीमियम बैज | Premium Badge</li>
+        </ul>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="subscribeNow()">अभी सब्सक्राइब करें | Subscribe Now - $10/6 months</button>
+      </div>
+    </div>
+
+    <!-- Subscription Benefits -->
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mt-6">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">प्रीमियम सुविधाएँ | Premium Features</h3>
+      <ul class="text-gray-600 space-y-2">
+        <li><i class="fas fa-check text-green-500 mr-2"></i> सवाल अपलोड करने की अनुमति | Permission to upload questions</li>
+        <li><i class="fas fa-check text-green-500 mr-2"></i> प्रोफ़ाइल कस्टमाइज़ेशन | Profile customization</li>
+        <li><i class="fas fa-check text-green-500 mr-2"></i> प्रीमियम बैज और मान्यता | Premium badge and engagement</li>
+        <li><i class="fas fa-check text-green-500 mr-2"></i> असीमित दैनिक प्रश्न | Unlimited daily questions</li>
+        <li><i class="fas fa-check text-green-500 mr-2"></i> विशेष सामग्री और टेस्ट | Exclusive content and tests</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- Message Bar (Instagram-like) -->
+  <div class="message-bar" id="messageBar">
+    <div class="flex items-center justify-between p-2 bg-gray-100 border-b">
+      <h3 class="text-lg font-bold">Messages</h3>
+      <button class="text-gray-500 hover:text-gray-700" onclick="toggleMessageBar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="space-y-2 mt-2">
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user1</p>
+          <p class="text-sm text-gray-500">Hey, check out my new question!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user2</p>
+          <p class="text-sm text-gray-500">Nice post, let's help!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user3</p>
+          <p class="text-sm text-gray-500">Can you help with this riddle?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Toggle Button -->
+  <button class="message-toggle bg-blue-600 text-white p-2 rounded-full" onclick="toggleMessageBar()">
+    <i class="fas fa-comment"></i>
+  </button>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function toggleMessageBar() {
+      const messageBar = document.getElementById('messageBar');
+      messageBar.classList.toggle('open');
+    }
+
+    function subscribeNow() {
+      alert('Subscription activated! Welcome to Premium! 🎉');
+      // In real implementation, this would redirect to payment gateway
+    }
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (!e.target.closest('.message-toggle') && !e.target.closest('#sideMenu')) {
+          alert(`Action "${e.target.textContent}" performed on the post!`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

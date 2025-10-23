@@ -1,0 +1,352 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - यूजर प्रोफाइल | User Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .profile-container {
+      min-height: calc(100vh - 120px);
+      padding: 20px;
+      background: #fafafa;
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+    .profile-header {
+      background: #fff;
+      border: 1px solid #dbdbdb;
+      border-radius: 3px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .profile-dp {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #dbdbdb;
+      margin-bottom: 10px;
+    }
+    .username {
+      font-size: 28px;
+      font-weight: 300;
+      margin: 10px 0;
+    }
+    .bio {
+      font-size: 14px;
+      color: #8e8e8e;
+      margin: 10px 0;
+      padding: 0 20px;
+      word-wrap: break-word;
+    }
+    .action-btn {
+      background: #0095f6;
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-top: 10px;
+      transition: background 0.2s;
+      margin: 0 5px;
+    }
+    .action-btn:hover {
+      background: #007bbe;
+    }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 20px 0;
+      font-size: 16px;
+    }
+    .stats-item {
+      text-align: center;
+    }
+    .stats-number {
+      font-weight: 600;
+      color: #262626;
+    }
+    .post-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      padding: 0 5px;
+    }
+    .post-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: transform 0.3s ease;
+      border: 1px solid #e5e7eb;
+    }
+    .post-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    .post-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 5px;
+    }
+    .post-options {
+      font-size: 0.875rem;
+      color: #4b5563;
+      margin-bottom: 10px;
+    }
+    .post-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    .interaction-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+      font-weight: 500;
+    }
+    .like-btn {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+    .like-btn:hover {
+      background: #dbeafe;
+    }
+    .comment-btn {
+      background: #f0fdf4;
+      color: #22c55e;
+    }
+    .comment-btn:hover {
+      background: #dcfce7;
+    }
+    .share-btn {
+      background: #fef2f2;
+      color: #ef4444;
+    }
+    .share-btn:hover {
+      background: #fee2e2;
+    }
+  </style>
+</head>
+<body class="font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/take-test.html" class="flex items-center"><i class="fas fa-pen mr-2"></i> Take Test</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES</h1>
+    <p class="text-lg">सवाल पूछो, ज्ञान बढ़ाओ | Ask, Learn, Win!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="profile-container">
+      <div class="profile-header">
+        <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-dp mx-auto">
+        <p class="username">@otheruser</p>
+        <p class="bio">ज्ञान के शौकीन | Knowledge enthusiast | Lover of trivia and quizzes. | 🌍📖</p>
+        <div class="stats">
+          <div class="stats-item">
+            <span class="stats-number">8</span>
+            <p>पोस्ट | Posts</p>
+          </div>
+          <div class="stats-item">
+            <span class="stats-number">120</span>
+            <p>फॉलोअर्स | Followers</p>
+          </div>
+          <div class="stats-item">
+            <span class="stats-number">60</span>
+            <p>फॉलोइंग | Following</p>
+          </div>
+        </div>
+        <div class="flex justify-center">
+          <button class="action-btn">फॉलो करें | Follow</button>
+          <button class="action-btn">मेसेज | Message</button>
+        </div>
+      </div>
+
+      <!-- Posts Grid -->
+      <div class="post-grid">
+        <!-- Post 1 -->
+        <div class="post-card">
+          <p class="post-title">प्रश्न: चंद्रमा का रंग क्या है?</p>
+          <p class="post-options">A) नीला, B) सफेद, C) लाल, D) हरा</p>
+          <p class="post-meta">Uploaded by: @otheruser | 01:00 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 4 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 1 Comment</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 2 -->
+        <div class="post-card">
+          <p class="post-title">Question: What is the largest ocean on Earth?</p>
+          <p class="post-options">A) Atlantic, B) Indian, C) Arctic, D) Pacific</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:55 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 6 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 2 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 3 -->
+        <div class="post-card">
+          <p class="post-title">प्रश्न: सूर्य से सबसे दूर ग्रह कौन सा है?</p>
+          <p class="post-options">A) बृहस्पति, B) शनि, C) यूरेनस, D) नेपच्यून</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:50 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 3 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 1 Comment</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 4 -->
+        <div class="post-card">
+          <p class="post-title">Question: Who painted the Mona Lisa?</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:45 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 5 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 3 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 5 -->
+        <div class="post-card">
+          <p class="post-title">प्रश्न: एक दर्जन में कितने अंडे होते हैं?</p>
+          <p class="post-options">A) 10, B) 12, C) 15, D) 8</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:40 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 7 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 4 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 6 -->
+        <div class="post-card">
+          <p class="post-title">Question: What gas do plants absorb from the atmosphere?</p>
+          <p class="post-options">A) Oxygen, B) Carbon Dioxide, C) Nitrogen, D) Hydrogen</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:35 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 9 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 5 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 7 -->
+        <div class="post-card">
+          <p class="post-title">प्रश्न: भारत का राष्ट्रीय पक्षी कौन सा है?</p>
+          <p class="post-options">A) मोर, B) तोता, C) कौआ, D) चील</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:30 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 11 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 6 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+        <!-- Post 8 -->
+        <div class="post-card">
+          <p class="post-title">Question: What is the capital of Brazil?</p>
+          <p class="post-meta">Uploaded by: @otheruser | 12:25 PM, 23 Oct 2025</p>
+          <div class="flex space-x-3 mt-3">
+            <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 8 Likes</button>
+            <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 2 Comments</button>
+            <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center border-t">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (!e.target.closest('.dp-change-btn') && !e.target.closest('#sideMenu')) {
+          alert(`Action "${e.target.textContent}" performed on the post!`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

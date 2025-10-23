@@ -1,0 +1,247 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - टेस्ट | Take Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question (Subscription Required)</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/subscription.html" class="flex items-center"><i class="fas fa-lock mr-2"></i> Subscription</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES - टेस्ट</h1>
+    <p class="text-lg">अपने ज्ञान का परीक्षण करें | Test Your Knowledge!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">टेस्ट शुरू करें | Start Test</h2>
+      <p class="text-gray-600 mb-4">इस टेस्ट में 5 प्रश्न हैं। समय: 5 मिनट। | This test has 5 questions. Time: 5 minutes.</p>
+      <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4" onclick="startTest()">टेस्ट शुरू करें | Start Test</button>
+    </div>
+
+    <!-- Test Questions (Hidden by default, shown on start) -->
+    <div id="testSection" class="hidden">
+      <form id="testForm" class="space-y-6">
+        <!-- Question 1 -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <p class="text-lg text-gray-800">प्रश्न 1: भारत की राजधानी क्या है? | Question 1: What is the capital of India?</p>
+          <div class="mt-2 space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="q1" value="a" class="mr-2"> A) दिल्ली | Delhi
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q1" value="b" class="mr-2"> B) मुंबई | Mumbai
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q1" value="c" class="mr-2"> C) कोलकाता | Kolkata
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q1" value="d" class="mr-2"> D) चेन्नई | Chennai
+            </label>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <p class="text-lg text-gray-800">प्रश्न 2: एक कार का इंजन कैसे काम करता है? | Question 2: How does a car engine work?</p>
+          <div class="mt-2 space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="q2" value="a" class="mr-2"> A) दहन | Combustion
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q2" value="b" class="mr-2"> B) बिजली | Electricity
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q2" value="c" class="mr-2"> C) सौर | Solar
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q2" value="d" class="mr-2"> D) पवन | Wind
+            </label>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <p class="text-lg text-gray-800">प्रश्न 3: दुनिया का सबसे ऊंचा पर्वत कौन सा है? | Question 3: What is the tallest mountain in the world?</p>
+          <div class="mt-2 space-y-2">
+            <label class="flex items-center">
+              <input type="radio" name="q3" value="a" class="mr-2"> A) कंचनजंगा | Kanchenjunga
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q3" value="b" class="mr-2"> B) एवरेस्ट | Everest
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q3" value="c" class="mr-2"> C) मकालू | Makalu
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="q3" value="d" class="mr-2"> D) ल्होत्से | Lhotse
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">जमा करें | Submit</button>
+        </div>
+      </form>
+      <p id="result" class="mt-4 text-center text-green-600 hidden">टेस्ट जमा कर दिया गया! परिणाम: <span id="score"></span>/3</p>
+    </div>
+  </main>
+
+  <!-- Message Bar (Instagram-like) -->
+  <div class="message-bar" id="messageBar">
+    <div class="flex items-center justify-between p-2 bg-gray-100 border-b">
+      <h3 class="text-lg font-bold">Messages</h3>
+      <button class="text-gray-500 hover:text-gray-700" onclick="toggleMessageBar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="space-y-2 mt-2">
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user1</p>
+          <p class="text-sm text-gray-500">Hey, check out my new question!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user2</p>
+          <p class="text-sm text-gray-500">Nice post, let's discuss!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user3</p>
+          <p class="text-sm text-gray-500">Can you help with this riddle?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Toggle Button -->
+  <button class="message-toggle bg-blue-600 text-white p-2 rounded-full" onclick="toggleMessageBar()">
+    <i class="fas fa-comment"></i>
+  </button>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function toggleMessageBar() {
+      const messageBar = document.getElementById('messageBar');
+      messageBar.classList.toggle('open');
+    }
+
+    function startTest() {
+      const testSection = document.getElementById('testSection');
+      testSection.classList.remove('hidden');
+    }
+
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      let score = 0;
+      const answers = {
+        q1: 'a', // Delhi
+        q2: 'a', // Combustion
+        q3: 'b'  // Everest
+      };
+      for (let q in answers) {
+        const selected = document.querySelector(`input[name="${q}"]:checked`);
+        if (selected && selected.value === answers[q]) score++;
+      }
+      const result = document.getElementById('result');
+      const scoreDisplay = document.getElementById('score');
+      scoreDisplay.textContent = `${score} `;
+      result.classList.remove('hidden');
+      this.classList.add('hidden');
+    });
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (!e.target.closest('.message-toggle') && !e.target.closest('#sideMenu')) {
+          alert(`Action "${e.target.textContent}" performed on the post!`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

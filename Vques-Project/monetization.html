@@ -1,0 +1,187 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - मुद्रीकरण | Monetization</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question (Subscription Required)</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/subscription.html" class="flex items-center"><i class="fas fa-lock mr-2"></i> Subscription</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES - मुद्रीकरण</h1>
+    <p class="text-lg">अपने ज्ञान से कमाएँ | Earn from Your Knowledge!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">आपका मुद्रीकरण स्टेटस | Your Monetization Status</h2>
+      <p class="text-gray-600 mb-4">वर्तमान में मुद्रीकरण सक्षम नहीं है। प्रीमियम सब्सक्रिप्शन के साथ शुरू करें! | Monetization is currently disabled. Start with a Premium Subscription!</p>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="enableMonetization()">मुद्रीकरण सक्षम करें | Enable Monetization</button>
+    </div>
+
+    <!-- Earnings Overview -->
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">आय का अवलोकन | Earnings Overview</h2>
+      <p class="text-gray-600 mb-2">कुल आय: $0.00 (पिछले 30 दिन) | Total Earnings: $0.00 (last 30 days)</p>
+      <p class="text-gray-600 mb-4">सक्रिय स्रोत: कोई नहीं | Active Sources: None</p>
+    </div>
+
+    <!-- Monetization Options -->
+    <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">मुद्रीकरण विकल्प | Monetization Options</h2>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">प्रश्नों से आय | Earnings from Questions</span>
+          <button class="bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>अक्षम | Disabled</button>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">स्पॉन्सर्ड पोस्ट | Sponsored Posts</span>
+          <button class="bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>अक्षम | Disabled</button>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700">सदस्यता साझेदारी | Subscription Partnerships</span>
+          <button class="bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>अक्षम | Disabled</button>
+        </div>
+        <p class="text-sm text-gray-500 mt-2">प्रीमियम सब्सक्रिप्शन के साथ इन विकल्पों को अनलॉक करें। | Unlock these options with a Premium Subscription.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Message Bar (Instagram-like) -->
+  <div class="message-bar" id="messageBar">
+    <div class="flex items-center justify-between p-2 bg-gray-100 border-b">
+      <h3 class="text-lg font-bold">Messages</h3>
+      <button class="text-gray-500 hover:text-gray-700" onclick="toggleMessageBar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="space-y-2 mt-2">
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user1</p>
+          <p class="text-sm text-gray-500">Hey, check out my new question!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user2</p>
+          <p class="text-sm text-gray-500">Nice post, let's discuss!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user3</p>
+          <p class="text-sm text-gray-500">Can you help with this riddle?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Toggle Button -->
+  <button class="message-toggle bg-blue-600 text-white p-2 rounded-full" onclick="toggleMessageBar()">
+    <i class="fas fa-comment"></i>
+  </button>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function toggleMessageBar() {
+      const messageBar = document.getElementById('messageBar');
+      messageBar.classList.toggle('open');
+    }
+
+    function enableMonetization() {
+      alert('Please upgrade to Premium Subscription to enable monetization! Redirecting to subscription page...');
+      // In real implementation, redirect to /subscription.html
+    }
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (!e.target.closest('.message-toggle') && !e.target.closest('#sideMenu')) {
+          alert(`Action "${e.target.textContent}" performed on the post!`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

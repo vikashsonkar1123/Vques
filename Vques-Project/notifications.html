@@ -1,0 +1,175 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - सूचनाएँ | Notifications</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .notification-container {
+      min-height: calc(100vh - 120px);
+      padding: 20px;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+    .notification-card {
+      background: #fff;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+    .notification-card:hover {
+      transform: translateX(5px);
+    }
+    .notification-icon {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    .notification-text {
+      font-size: 14px;
+      color: #333;
+    }
+    .notification-time {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body class="font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/take-test.html" class="flex items-center"><i class="fas fa-pen mr-2"></i> Take Test</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES</h1>
+    <p class="text-lg">सवाल पूछो, ज्ञान बढ़ाओ | Ask, Learn, Win!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="notification-container">
+      <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">🔔 सूचनाएँ | Notifications</h2>
+      <div id="notificationList" class="space-y-4">
+        <!-- Sample Notifications -->
+        <div class="notification-card">
+          <i class="fas fa-thumbs-up notification-icon text-blue-500"></i>
+          <div>
+            <p class="notification-text"><strong>@user2</strong> ने आपके सवाल "What is the capital of India?" को लाइक किया। | liked your question "What is the capital of India?".</p>
+            <p class="notification-time">11:10 AM, 23 Oct 2025</p>
+          </div>
+        </div>
+        <div class="notification-card">
+          <i class="fas fa-comment notification-icon text-green-500"></i>
+          <div>
+            <p class="notification-text"><strong>@user3</strong> ने आपके सवाल पर कमेंट किया: "Great question!" | commented on your question: "Great question!".</p>
+            <p class="notification-time">11:05 AM, 23 Oct 2025</p>
+          </div>
+        </div>
+        <div class="notification-card">
+          <i class="fas fa-share notification-icon text-red-500"></i>
+          <div>
+            <p class="notification-text"><strong>@user4</strong> ने आपके सवाल "Who invented the light bulb?" को शेयर किया। | shared your question "Who invented the light bulb?".</p>
+            <p class="notification-time">11:00 AM, 23 Oct 2025</p>
+          </div>
+        </div>
+        <div class="notification-card">
+          <i class="fas fa-user-plus notification-icon text-purple-500"></i>
+          <div>
+            <p class="notification-text"><strong>@user5</strong> ने आपको फॉलो किया। | followed you.</p>
+            <p class="notification-time">10:55 AM, 23 Oct 2025</p>
+          </div>
+        </div>
+        <div class="notification-card">
+          <i class="fas fa-thumbs-up notification-icon text-blue-500"></i>
+          <div>
+            <p class="notification-text"><strong>@user6</strong> ने आपके सवाल "Which planet is known as the Red Planet?" को लाइक किया। | liked your question "Which planet is known as the Red Planet?".</p>
+            <p class="notification-time">10:50 AM, 23 Oct 2025</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+  </script>
+</body>
+</html>
