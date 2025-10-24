@@ -1,0 +1,228 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - खोज | Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .search-container {
+      min-height: calc(100vh - 120px);
+      padding: 20px;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+    .search-card {
+      background: #fff;
+      border: 1px solid #dbdbdb;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .search-input {
+      border: 1px solid #dbdbdb;
+      background: #fafafa;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #b2dffc;
+      box-shadow: 0 0 5px rgba(178, 223, 252, 0.5);
+    }
+    .search-btn {
+      background: #0095f6;
+      color: #fff;
+      padding: 7px;
+      font-weight: 600;
+      border-radius: 5px;
+      width: 100%;
+      transition: background 0.3s;
+    }
+    .search-btn:hover {
+      background: #007bbe;
+    }
+  </style>
+</head>
+<body class="font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/take-test.html" class="flex items-center"><i class="fas fa-pen mr-2"></i> Take Test</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES</h1>
+    <p class="text-lg">सवाल पूछो, ज्ञान बढ़ाओ | Ask, Learn, Win!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-gray-800 mb-2">🔍 खोज</h2>
+      <p class="text-gray-600">यूजर्स या सवाल खोजें | Search Users or Questions</p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-6">
+      <input type="text" id="searchInput" placeholder="यूजर आईडी या सवाल खोजें... | Search User ID or Question..." class="search-input rounded">
+      <button class="search-btn mt-2" onclick="performSearch()">खोजें | Search</button>
+    </div>
+
+    <!-- Search Results -->
+    <div id="searchResults" class="space-y-4">
+      <p class="text-gray-600">खोज शुरू करें... | Start searching...</p>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function performSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const results = document.getElementById('searchResults');
+      results.innerHTML = '';
+
+      // Dummy data for users and questions
+      const users = [
+        { id: '@user1', name: 'User1', bio: 'Question Enthusiast' },
+        { id: '@user2', name: 'User2', bio: 'Tech Guru' },
+        { id: '@user3', name: 'User3', bio: 'Riddle Master' },
+        { id: '@user4', name: 'User4', bio: 'Geography Geek' },
+        { id: '@user5', name: 'User5', bio: 'Math Lover' },
+        { id: '@user6', name: 'User6', bio: 'Science Fan' }
+      ];
+
+      const questions = [
+        { title: 'What is the capital of India?', content: 'A) Delhi, B) Mumbai, C) Kolkata, D) Chennai' },
+        { title: 'How does a car engine work?', content: 'A) Combustion, B) Electricity, C) Solar, D) Wind' },
+        { title: 'What is the tallest mountain in the world?', content: '' },
+        { title: 'Who invented the light bulb?', content: '' },
+        { title: 'Which planet is known as the Red Planet?', content: 'A) Earth, B) Mars, C) Jupiter, D) Venus' },
+        { title: 'What is the chemical symbol for water?', content: 'A) H2O, B) CO2, C) O2, D) N2' }
+      ];
+
+      if (query) {
+        // Search Users
+        const filteredUsers = users.filter(user => user.id.toLowerCase().includes(query) || user.name.toLowerCase().includes(query));
+        if (filteredUsers.length > 0) {
+          const userHeader = document.createElement('h3');
+          userHeader.className = 'text-xl font-bold mb-2';
+          userHeader.textContent = 'यूजर्स परिणाम | User Results';
+          results.appendChild(userHeader);
+
+          filteredUsers.forEach(user => {
+            const div = document.createElement('div');
+            div.className = 'search-card flex items-center space-x-4';
+            div.innerHTML = `
+              <img src="https://via.placeholder.com/50" alt="User" class="w-12 h-12 rounded-full">
+              <div>
+                <p class="font-bold">${user.id}</p>
+                <p class="text-sm text-gray-500">${user.bio}</p>
+              </div>
+            `;
+            results.appendChild(div);
+          });
+        }
+
+        // Search Questions
+        const filteredQuestions = questions.filter(q => q.title.toLowerCase().includes(query));
+        if (filteredQuestions.length > 0) {
+          const questionHeader = document.createElement('h3');
+          questionHeader.className = 'text-xl font-bold mb-2 mt-4';
+          questionHeader.textContent = 'सवाल परिणाम | Question Results';
+          results.appendChild(questionHeader);
+
+          filteredQuestions.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'search-card';
+            div.innerHTML = `
+              <p class="font-bold">${q.title}</p>
+              <p class="text-sm text-gray-500">${q.content ? 'Options: ' + q.content : 'No options'}</p>
+            `;
+            results.appendChild(div);
+          });
+        }
+
+        if (filteredUsers.length === 0 && filteredQuestions.length === 0) {
+          results.innerHTML = '<p class="text-gray-600">कोई परिणाम नहीं मिला। | No results found.</p>';
+        }
+      } else {
+        results.innerHTML = '<p class="text-gray-600">खोज शुरू करें... | Start searching...</p>';
+      }
+    }
+  </script>
+</body>
+</html>

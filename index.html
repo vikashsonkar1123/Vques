@@ -1,0 +1,380 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - सामान्य ज्ञान, विज्ञान, गणित</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .message-bar {
+      width: 300px;
+      height: calc(100vh - 60px);
+      position: fixed;
+      top: 0;
+      right: 0;
+      background-color: #fff;
+      border-left: 1px solid #e5e7eb;
+      padding: 10px;
+      overflow-y: auto;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1000;
+    }
+    .message-bar.open {
+      transform: translateX(0);
+    }
+    .message-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1001;
+    }
+    header {
+      position: relative;
+      z-index: 1002;
+    }
+    .post-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+      border: 1px solid #e5e7eb;
+    }
+    .post-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    .post-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 5px;
+    }
+    .post-options {
+      font-size: 0.875rem;
+      color: #4b5563;
+      margin-bottom: 10px;
+    }
+    .post-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    .interaction-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+      font-weight: 500;
+    }
+    .like-btn {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+    .like-btn:hover {
+      background: #dbeafe;
+    }
+    .comment-btn {
+      background: #f0fdf4;
+      color: #22c55e;
+    }
+    .comment-btn:hover {
+      background: #dcfce7;
+    }
+    .share-btn {
+      background: #fef2f2;
+      color: #ef4444;
+    }
+    .share-btn:hover {
+      background: #fee2e2;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans relative min-h-screen">
+
+  <!-- Side Menu (Instagram-like) -->
+  <nav class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transform -translate-x-full transition-transform duration-300" id="sideMenu">
+    <i class="fas fa-times text-2xl cursor-pointer absolute top-4 right-4" onclick="toggleMenu()"></i>
+    <ul class="space-y-4 mt-12">
+      <li><a href="/index.html" class="flex items-center"><i class="fas fa-home mr-2"></i> Home</a></li>
+      <li><a href="/search.html" class="flex items-center"><i class="fas fa-search mr-2"></i> Search</a></li>
+      <li><a href="/add-question.html" class="flex items-center"><i class="fas fa-plus mr-2"></i> Add Question</a></li>
+      <li><a href="/notifications.html" class="flex items-center"><i class="fas fa-bell mr-2"></i> Notifications</a></li>
+      <li><a href="/profile.html" class="flex items-center"><i class="fas fa-user mr-2"></i> Profile</a></li>
+      <li><a href="/settings.html" class="flex items-center"><i class="fas fa-cog mr-2"></i> Settings</a></li>
+      <li><a href="/monetization.html" class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Monetization</a></li>
+      <li><a href="/take-test.html" class="flex items-center"><i class="fas fa-pen mr-2"></i> Take Test</a></li>
+      <li><a href="/logout.html" class="flex items-center"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Menu Toggle Button -->
+  <button class="fixed top-4 left-4 text-white bg-blue-600 p-2 rounded-full" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center shadow-lg">
+    <h1 class="text-4xl font-bold mb-2">🎯 VQUES</h1>
+    <p class="text-lg">सवाल पूछो, ज्ञान बढ़ाओ | Ask, Learn, Win!</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 pt-24 pb-24">
+    <div class="space-y-6">
+      <!-- Post 1 (Hindi with Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: भारत की राजधानी क्या है?</p>
+        <p class="post-options">विकल्प: A) दिल्ली, B) मुंबई, C) कोलकाता, D) चेन्नई</p>
+        <p class="post-meta">Uploaded by: @user1 | 10:30 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 5 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 2 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 2 (English with Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: How does a car engine work?</p>
+        <p class="post-options">Options: A) Combustion, B) Electricity, C) Solar, D) Wind</p>
+        <p class="post-meta">Uploaded by: @user2 | 10:29 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 3 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 1 Comment</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 3 (Hindi without Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: दुनिया का सबसे ऊंचा पर्वत कौन सा है?</p>
+        <p class="post-meta">Uploaded by: @user3 | 10:28 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 7 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 4 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 4 (English without Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: What is the tallest mountain in the world?</p>
+        <p class="post-meta">Uploaded by: @user4 | 10:27 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 6 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 3 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 5 (Hindi with Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: मैं बिना मुँह के बोलता हूँ, इसका जवाब क्या है?</p>
+        <p class="post-options">विकल्प: A) गूंज, B) रेडियो, C) किताब, D) फोन</p>
+        <p class="post-meta">Uploaded by: @user5 | 10:26 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 4 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 2 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 6 (English with Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: What is the chemical symbol for water?</p>
+        <p class="post-options">Options: A) H2O, B) CO2, C) O2, D) N2</p>
+        <p class="post-meta">Uploaded by: @user6 | 10:25 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 8 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 5 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 7 (Hindi with Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: 2 + 2 × 2 का मान क्या है?</p>
+        <p class="post-options">विकल्प: A) 6, B) 8, C) 22, D) 4</p>
+        <p class="post-meta">Uploaded by: @mathguru | 10:24 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 10 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 6 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 8 (English without Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: Who invented the light bulb?</p>
+        <p class="post-meta">Uploaded by: @inventorfan | 10:23 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 12 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 7 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 9 (Hindi without Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: गणित का पिता कौन है?</p>
+        <p class="post-meta">Uploaded by: @mathlover | 10:22 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 9 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 4 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 10 (English with Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: Which planet is known as the Red Planet?</p>
+        <p class="post-options">Options: A) Earth, B) Mars, C) Jupiter, D) Venus</p>
+        <p class="post-meta">Uploaded by: @spaceexplorer | 10:21 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 15 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 8 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 11 (Hindi with Options) -->
+      <div class="post-card">
+        <p class="post-title">प्रश्न: पानी का रासायनिक सूत्र क्या है?</p>
+        <p class="post-options">विकल्प: A) H2O, B) CO2, C) O2, D) N2</p>
+        <p class="post-meta">Uploaded by: @sciencefan | 10:20 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 6 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 3 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+
+      <!-- Post 12 (English without Options) -->
+      <div class="post-card">
+        <p class="post-title">Question: What is the capital of France?</p>
+        <p class="post-meta">Uploaded by: @geographygeek | 10:19 AM, 23 Oct 2025</p>
+        <div class="flex space-x-3 mt-3">
+          <button class="interaction-btn like-btn"><i class="fas fa-thumbs-up"></i> 10 Likes</button>
+          <button class="interaction-btn comment-btn"><i class="fas fa-comment"></i> 5 Comments</button>
+          <button class="interaction-btn share-btn"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Message Bar (Instagram-like) -->
+  <div class="message-bar" id="messageBar">
+    <div class="flex items-center justify-between p-2 bg-gray-100 border-b">
+      <h3 class="text-lg font-bold">Messages</h3>
+      <button class="text-gray-500 hover:text-gray-700" onclick="toggleMessageBar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="space-y-2 mt-2">
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user1</p>
+          <p class="text-sm text-gray-500">Hey, check out my new question!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user2</p>
+          <p class="text-sm text-gray-500">Nice post, let's discuss!</p>
+        </div>
+      </div>
+      <div class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+        <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full mr-2">
+        <div>
+          <p class="font-semibold">@user3</p>
+          <p class="text-sm text-gray-500">Can you help with this riddle?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Toggle Button -->
+  <button class="message-toggle bg-blue-600 text-white p-2 rounded-full" onclick="toggleMessageBar()">
+    <i class="fas fa-comment"></i>
+  </button>
+
+  <!-- Bottom Navigation (Instagram-like) -->
+  <nav class="fixed bottom-0 left-0 w-full bg-white shadow-lg p-2 flex justify-around items-center">
+    <a href="/index.html" class="text-center"><i class="fas fa-home text-xl"></i><p class="text-sm">Home</p></a>
+    <a href="/search.html" class="text-center"><i class="fas fa-search text-xl"></i><p class="text-sm">Search</p></a>
+    <a href="/add-question.html" class="text-center"><i class="fas fa-plus text-xl"></i><p class="text-sm">Upload</p></a>
+    <a href="/notifications.html" class="text-center"><i class="fas fa-bell text-xl"></i><p class="text-sm">Notifications</p></a>
+    <a href="/profile.html" class="text-center"><i class="fas fa-user text-xl"></i><p class="text-sm">Profile</p></a>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      menu.classList.toggle('-translate-x-full');
+    }
+
+    function toggleMessageBar() {
+      const messageBar = document.getElementById('messageBar');
+      messageBar.classList.toggle('open');
+    }
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (!e.target.closest('.message-toggle') && !e.target.closest('#sideMenu')) {
+          alert(`Action "${e.target.textContent}" performed on the post!`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

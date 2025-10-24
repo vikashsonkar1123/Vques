@@ -1,0 +1,178 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQUES - साइन अप | Sign Up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .signup-container {
+      min-height: calc(100vh - 60px);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Changed to flex-start for better scroll behavior */
+      padding: 20px;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      overflow-y: auto; /* Enable vertical scrolling if content overflows */
+    }
+    .signup-card {
+      background: #fff;
+      border: 1px solid #dbdbdb;
+      width: 100%;
+      max-width: 350px;
+      padding: 20px 40px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-top: 60px; /* Offset for fixed header */
+    }
+    .signup-card input {
+      border: 1px solid #dbdbdb;
+      background: #fafafa;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+    }
+    .signup-card input:focus {
+      outline: none;
+      border-color: #b2dffc;
+      box-shadow: 0 0 5px rgba(178, 223, 252, 0.5);
+    }
+    .signup-btn {
+      background: #0095f6;
+      color: #fff;
+      padding: 7px;
+      font-weight: 600;
+      border-radius: 5px;
+      width: 100%;
+      transition: background 0.3s;
+    }
+    .signup-btn:hover {
+      background: #007bbe;
+    }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: #8e8e8e;
+    }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      flex-grow: 1;
+      height: 1px;
+      background: #dbdbdb;
+      margin: 0 10px;
+    }
+    .fb-btn {
+      background: #1877f2;
+      color: #fff;
+      padding: 7px;
+      font-weight: 600;
+      border-radius: 5px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.3s;
+    }
+    .fb-btn:hover {
+      background: #166fe5;
+    }
+  </style>
+</head>
+<body class="font-sans relative">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 text-center shadow-lg fixed top-0 w-full z-10">
+    <h1 class="text-3xl font-bold">🎯 VQUES</h1>
+  </header>
+
+  <!-- Main Content -->
+  <main class="signup-container">
+    <div class="signup-card">
+      <h2 class="text-xl font-semibold text-center mb-6">VQUES में साइन अप करें | Sign Up to VQUES</h2>
+      <form id="signupForm" class="space-y-3">
+        <input type="text" name="emailPhone" required placeholder="ईमेल या फोन नंबर | Email or Phone Number" class="w-full rounded">
+        <input type="text" name="otp" required placeholder="OTP | One-Time Password" class="w-full rounded">
+        <input type="date" name="dob" required placeholder="जन्म तिथि | Date of Birth" class="w-full rounded">
+        <input type="text" name="username" required placeholder="यूजरनेम | Username" class="w-full rounded">
+        <input type="password" name="password" required placeholder="पासवर्ड | Password" class="w-full rounded">
+        <button type="submit" class="signup-btn">साइन अप | Sign Up</button>
+      </form>
+      <div class="text-center my-3 text-sm text-red-500 hidden" id="errorMsg">कृपया सभी जानकारी सही भरें। | Please fill all details correctly.</div>
+      <div class="or-divider"><span>या | OR</span></div>
+      <button class="fb-btn mb-3"><i class="fab fa-facebook-f"></i> Facebook से साइन अप करें | Sign Up with Facebook</button>
+      <p class="text-center text-sm text-gray-500">पहले से अकाउंट है? <a href="/login.html" class="text-blue-500 hover:underline">लॉगिन करें | Log In</a></p>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const errorMsg = document.getElementById('errorMsg');
+      const emailPhone = this.emailPhone.value;
+      const otp = this.otp.value;
+      const dob = this.dob.value;
+      const username = this.username.value;
+      const password = this.password.value;
+
+      // Dummy validation
+      if (emailPhone && otp && dob && username && password) {
+        alert('साइन अप सफल! लॉगिन पेज पर रीडायरेक्ट हो रहा है... | Sign up successful! Redirecting to login page...');
+        // In real implementation, validate OTP and redirect to /login.html or /index.html
+      } else {
+        errorMsg.classList.remove('hidden');
+        setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+      }
+    });
+
+    // Dummy interaction
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        if (e.target.classList.contains('fb-btn')) {
+          alert('Facebook साइन अप शुरू हो रहा है... | Facebook sign up initiating...');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
